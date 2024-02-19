@@ -9,27 +9,51 @@ const io = require("socket.io")(server, {
   },
 });
 
+const users = {};
+
 io.on("connection", (socket) => {
   socket.emit("me", socket.id);
+
+  socket.on("registerUser", (userId) => {
+    users[userId] = socket.id;
+    console.log(`User ${userId} mapped to socket ${socket.id}`);
+  });
 
   console.log(`New client connected with socket ID: ${socket.id}`);
 
   socket.on("disconnect", () => {
-    socket.broadcast.emit("callEnded");
     console.log("User disconnected");
+    // Remove the user from the mapping when they disconnect
+    Object.keys(users).forEach((userId) => {
+      if (users[userId] === socket.id) {
+        delete users[userId];
+        console.log(`User ${userId} disconnected and removed from mapping`);
+      }
+    });
+    socket.broadcast.emit("callEnded");
   });
 
   socket.on("callUser", (data) => {
-    // console.log("🚀 ~ socket.on ~ data:", data);
-    io.to(data.userToCall).emit("callUser", {
+    console.log(
+      "🚀 ~ socket.on ~ data:",
+      data,
+      users[data.from],
+      users[data.userToCall]
+    );
+    console.log("🚀 ~ socket.on ~ users[data.from],:", users[data.from]);
+    console.log(
+      "🚀 ~ socket.on ~ users[data.userToCall]:",
+      users[data.userToCall]
+    );
+    io.to(users[data.userToCall]).emit("callUser", {
       signal: data.signalData,
-      from: data.from,
+      from: users[data.from],
       name: data.name,
     });
   });
 
   socket.on("answerCall", (data) => {
-    // console.log("🚀 ~ socket.on ~ answerCall", data);
+    console.log("🚀 ~ socket.on ~ answerCall", data);
     io.to(data.to).emit("callAccepted", data.signal);
   });
 });
