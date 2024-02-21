@@ -13,9 +13,11 @@ const users = {};
 
 io.on("connection", (socket) => {
   socket.emit("me", socket.id);
+  socket.emit("onlineUsers", users);
 
   socket.on("registerUser", (userId) => {
     users[userId] = socket.id;
+
     console.log(`User ${userId} mapped to socket ${socket.id}`);
   });
 
