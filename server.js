@@ -13,10 +13,11 @@ const users = {};
 
 io.on("connection", (socket) => {
   socket.emit("me", socket.id);
-  socket.emit("onlineUsers", users);
+  io.emit("onlineUsers", users);
 
   socket.on("registerUser", (userId) => {
     users[userId] = socket.id;
+    io.emit("onlineUsers", users);
 
     console.log(`User ${userId} mapped to socket ${socket.id}`);
   });
@@ -32,6 +33,8 @@ io.on("connection", (socket) => {
         console.log(`User ${userId} disconnected and removed from mapping`);
       }
     });
+    io.emit("onlineUsers", users);
+
     socket.broadcast.emit("callEnded");
   });
 
